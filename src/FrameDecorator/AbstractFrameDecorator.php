@@ -638,7 +638,7 @@ abstract class AbstractFrameDecorator extends Frame
 
         $node = $this->_frame->get_node();
 
-        $split = $this->copy($node->cloneNode());
+        $split = $this->copy(@$node->cloneNode());
         $split->reset();
         $split->get_original_style()->text_indent = 0;
         $split->_splitted = true;
