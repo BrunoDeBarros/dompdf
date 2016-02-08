@@ -24,12 +24,18 @@
         },
         "classmap" : ["lib/"]
     },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/BrunoDeBarros/php-font-lib.git"
+        }
+    ],
     "require": {
         "php": ">=5.3.0",
         "ext-gd": "*",
         "ext-dom": "*",
         "ext-mbstring": "*",
-        "phenx/php-font-lib": "0.4.*",
+        "phenx/php-font-lib": "dev-master",
         "phenx/php-svg-lib": "0.1.*"
     },
     "require-dev": {
