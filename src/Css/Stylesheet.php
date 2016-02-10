@@ -337,7 +337,8 @@ class Stylesheet
             }
 
             set_error_handler(array("\\Dompdf\\Helpers", "record_warnings"));
-            $css = file_get_contents($file, null, $this->_dompdf->get_http_context());
+            $method = function_exists("get_url_contents") ? "get_url_contents" : "file_get_contents";
+            $css = $method($file, null, $this->_dompdf->get_http_context());
             restore_error_handler();
 
             $good_mime_type = true;

@@ -95,7 +95,8 @@ class Cache
                             }
                         } else {
                             set_error_handler(array("\\Dompdf\\Helpers", "record_warnings"));
-                            $image = file_get_contents($full_url, null, $dompdf->getHttpContext());
+                            $method = function_exists("get_url_contents") ? "get_url_contents" : "file_get_contents";
+                            $image = $method($full_url, null, $dompdf->getHttpContext());
                             restore_error_handler();
                         }
 
