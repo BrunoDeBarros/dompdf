@@ -236,7 +236,8 @@ class FontMetrics
             $entry[$styleString] = $cacheEntry;
             
             // Download the remote file
-            $remoteFileContent = @file_get_contents($remoteFile, null, $context);
+            $method = function_exists("get_url_contents") ? "get_url_contents" : "file_get_contents";
+            $remoteFileContent = $method($remoteFile, null, $context);
             if (false === $remoteFileContent) {
                 return false;
             }
