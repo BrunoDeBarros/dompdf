@@ -359,6 +359,15 @@ class Stylesheet
                 return;
             }
         }
+        
+        if (substr($file, 0, 4) == "http") {
+            $this->_dompdf->setHttpContext(stream_context_create([
+                'http' => [
+                    'method' => "GET",
+                    'header' => "Referer: " . $file,
+                ],
+            ]));
+        }
 
         $this->_parse_css($css);
     }
