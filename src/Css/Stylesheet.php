@@ -622,6 +622,7 @@ class Stylesheet
                         case "first-letter": // TODO
 
                             // N/A
+                        case "focus":
                         case "active":
                         case "hover":
                         case "visited":
@@ -871,7 +872,7 @@ class Stylesheet
                         continue;
                     }
 
-                    if (($src = $this->_image($style->content)) !== "none") {
+                    if (($src = $this->_image($style->get_prop('content'))) !== "none") {
                         $new_node = $node->ownerDocument->createElement("img_generated");
                         $new_node->setAttribute("src", $src);
                     } else {
@@ -906,7 +907,7 @@ class Stylesheet
                 $id = $node->getAttribute("frame_id");
 
                 // Assign the current style to the scratch array
-                $spec = $this->_specificity($selector);
+                $spec = $this->_specificity($selector, $style->get_origin());
                 $styles[$id][$spec][] = $style;
             }
         }
