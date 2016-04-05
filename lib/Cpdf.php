@@ -3290,6 +3290,9 @@ EOT;
         // start: top edge, left end
         $this->addContent(sprintf("\n%.3F %.3F m ", $x1, $y1 - $rTL + $h));
 
+        // line: bottom edge, left end
+        $this->addContent(sprintf("\n%.3F %.3F l ", $x1, $y1 - $rBL));
+
         // curve: bottom-left corner
         $this->ellipse($x1 + $rBL, $y1 + $rBL, $rBL, 0, 0, 8, 180, 270, false, false, false, true);
 
@@ -3630,7 +3633,6 @@ EOT;
         if ($convert_encoding) {
             $cf = $this->currentFont;
             if (isset($this->fonts[$cf]) && $this->fonts[$cf]['isUnicode']) {
-                //$text = html_entity_decode($text, ENT_QUOTES, 'UTF-8');
                 $text = $this->utf8toUtf16BE($text, $bom);
             } else {
                 //$text = html_entity_decode($text, ENT_QUOTES);
@@ -3886,8 +3888,7 @@ EOT;
             $cf = $this->currentFont;
             if ($this->fonts[$cf]['isUnicode'] && $wordSpaceAdjust != 0) {
                 $space_scale = 1000 / $size;
-                //$place_text = str_replace(' ', ') ( ) '.($this->getTextWidth($size, chr(32), $wordSpaceAdjust)*-75).' (', $place_text);
-                $place_text = str_replace(' ', ' ) ' . (-round($space_scale * $wordSpaceAdjust)) . ' (', $place_text);
+                $place_text = str_replace('\x00\x20', '\x00\x20)\x00\x20' . (-round($space_scale * $wordSpaceAdjust)) . '\x00\x20(', $place_text);
             }
             $this->addContent(" /F$this->currentFontNum " . sprintf('%.1F Tf ', $size));
             $this->addContent(" [($place_text)] TJ");
