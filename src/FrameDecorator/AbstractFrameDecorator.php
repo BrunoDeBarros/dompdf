@@ -650,7 +650,7 @@ abstract class AbstractFrameDecorator extends Frame
             $node->removeAttribute("id");
         }
 
-        $split = $this->copy($node->cloneNode());
+        $split = $this->copy(@$node->cloneNode());
         $split->reset();
         $split->get_original_style()->text_indent = 0;
         $split->_splitted = true;
@@ -804,5 +804,15 @@ abstract class AbstractFrameDecorator extends Frame
     final function get_min_max_width()
     {
         return $this->_reflower->get_min_max_width();
+    }
+
+    /**
+     * Determine current frame width based on contents
+     *
+     * @return float
+     */
+    final function calculate_auto_width()
+    {
+        return $this->_reflower->calculate_auto_width();
     }
 }

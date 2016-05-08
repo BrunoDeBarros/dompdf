@@ -867,7 +867,7 @@ class Dompdf
      */
     private function write_log()
     {
-        $log_output_file = $this->get_option("log_output_file");
+        $log_output_file = $this->getOptions()->getLogOutputFile();
         if (!$log_output_file || !is_writable($log_output_file)) {
             return;
         }
@@ -886,7 +886,7 @@ class Dompdf
 
         $out .= ob_get_clean();
 
-        $log_output_file = $this->get_option("log_output_file");
+        $log_output_file = $this->getOptions()->getLogOutputFile();
         file_put_contents($log_output_file, $out);
     }
 
