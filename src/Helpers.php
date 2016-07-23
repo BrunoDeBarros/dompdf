@@ -751,7 +751,9 @@ class Helpers
 
         set_error_handler(array("\\Dompdf\\Helpers", "record_warnings"));
 
-        if ($is_local_path || ini_get("allow_url_fopen")) {
+        if (function_exists("get_url_contents")) {
+            $result = get_url_contents($uri);
+        } elseif ($is_local_path || ini_get("allow_url_fopen")) {
             if (isset($maxlen)) {
                 $result = file_get_contents($uri, null, $context, $offset, $maxlen);
             } else {
