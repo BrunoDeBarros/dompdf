@@ -94,10 +94,7 @@ class Cache
                                 $image = $parsed_data_uri['data'];
                             }
                         } else {
-                            set_error_handler(array("\\Dompdf\\Helpers", "record_warnings"));
-                            $method = function_exists("get_url_contents") ? "get_url_contents" : "file_get_contents";
-                            $image = $method($full_url, null, $dompdf->getHttpContext());
-                            restore_error_handler();
+                            $image = Helpers::getFileContent($full_url, $dompdf->getHttpContext());
                         }
 
                         // Image not found or invalid

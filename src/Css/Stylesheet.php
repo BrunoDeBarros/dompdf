@@ -335,11 +335,8 @@ class Stylesheet
             } else {
                 $file = Helpers::build_url($this->_protocol, $this->_base_host, $this->_base_path, $filename);
             }
-
-            set_error_handler(array("\\Dompdf\\Helpers", "record_warnings"));
-            $method = function_exists("get_url_contents") ? "get_url_contents" : "file_get_contents";
-            $css = $method($file, null, $this->_dompdf->get_http_context());
-            restore_error_handler();
+            
+            list($css, $http_response_header) = Helpers::getFileContent($file, $this->_dompdf->get_http_context());
 
             $good_mime_type = true;
 
