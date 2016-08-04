@@ -206,8 +206,10 @@ class FontMetrics
             $font->parse();
             $font->saveAdobeFontMetrics("$cacheEntry.ufm");
             $font->close();
-            
-            unlink($localTempFile);
+
+            if (file_exists($localTempFile)) {
+                unlink($localTempFile);
+            }
             
             if ( !file_exists("$cacheEntry.ufm") ) {
                 return false;

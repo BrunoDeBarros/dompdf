@@ -335,7 +335,7 @@ class Stylesheet
             } else {
                 $file = Helpers::build_url($this->_protocol, $this->_base_host, $this->_base_path, $filename);
             }
-
+            
             list($css, $http_response_header) = Helpers::getFileContent($file, $this->_dompdf->get_http_context());
 
             $good_mime_type = true;
@@ -355,6 +355,15 @@ class Stylesheet
                 Helpers::record_warnings(E_USER_WARNING, "Unable to load css file $file", __FILE__, __LINE__);
                 return;
             }
+        }
+        
+        if (substr($file, 0, 4) == "http") {
+            $this->_dompdf->setHttpContext(stream_context_create([
+                'http' => [
+                    'method' => "GET",
+                    'header' => "Referer: " . $file,
+                ],
+            ]));
         }
 
         $this->_parse_css($css);
