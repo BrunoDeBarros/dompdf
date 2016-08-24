@@ -94,10 +94,7 @@ class Cache
                                 $image = $parsed_data_uri['data'];
                             }
                         } else {
-                            $image = Helpers::getFileContent($full_url, $dompdf->getHttpContext());
-
-                            # Helpers::getFileContent returns an array, and the contents are the first item in it.
-                            $image = $image[0];
+                            list($image, $http_response_header) = Helpers::getFileContent($full_url, $dompdf->getHttpContext());
                         }
 
                         // Image not found or invalid
