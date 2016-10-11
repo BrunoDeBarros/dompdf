@@ -214,19 +214,13 @@ class Block extends AbstractFrameReflower
      */
     protected function _calculate_content_height()
     {
-        $lines = $this->_frame->get_line_boxes();
         $height = 0;
-
-        foreach ($lines as $line) {
-            $height += $line->h;
+        $lines = $this->_frame->get_line_boxes();
+        if (count($lines) > 0) {
+            $last_line = end($lines);
+            $position = $this->_frame->get_position();
+            $height = $last_line->y + $last_line->h - $position['y'];
         }
-
-        /*
-        $first_line = reset($lines);
-        $last_line  = end($lines);
-        $height2 = $last_line->y + $last_line->h - $first_line->y;
-        */
-
         return $height;
     }
 
