@@ -19,8 +19,9 @@ use Dompdf\Helpers;
 class Block extends AbstractRenderer
 {
 
-    //........................................................................
-
+    /**
+     * @param Frame $frame
+     */
     function render(Frame $frame)
     {
         $style = $frame->get_style();
@@ -42,7 +43,7 @@ class Block extends AbstractRenderer
         // Handle anchors & links
         if ($node->nodeName === "a" && $href = $node->getAttribute("href")) {
             $href = Helpers::build_url($this->_dompdf->getProtocol(), $this->_dompdf->getBaseHost(), $this->_dompdf->getBasePath(), $href);
-            $this->_canvas->add_link($href, $x, $y, $w, $h);
+            $this->_canvas->add_link($href, $x, $y, (float)$w, (float)$h);
         }
 
         // Draw our background, border and content
@@ -87,6 +88,11 @@ class Block extends AbstractRenderer
         }
     }
 
+    /**
+     * @param AbstractFrameDecorator $frame
+     * @param null $border_box
+     * @param string $corner_style
+     */
     protected function _render_border(AbstractFrameDecorator $frame, $border_box = null, $corner_style = "bevel")
     {
         $style = $frame->get_style();
@@ -108,20 +114,24 @@ class Block extends AbstractRenderer
             array_sum($radius) == 0
         ) {
             $props = $bp["top"];
-            if ($props["color"] === "transparent" || $props["width"] <= 0) return;
+            if ($props["color"] === "transparent" || $props["width"] <= 0) {
+                return;
+            }
 
             list($x, $y, $w, $h) = $border_box;
             $width = (float)$style->length_in_pt($props["width"]);
             $pattern = $this->_get_dash_pattern($props["style"], $width);
-            $this->_canvas->rectangle($x + $width / 2, $y + $width / 2, $w - $width, $h - $width, $props["color"], $width, $pattern);
+            $this->_canvas->rectangle($x + $width / 2, $y + $width / 2, (float)$w - $width, (float)$h - $width, $props["color"], $width, $pattern);
             return;
         }
 
         // Do it the long way
-        $widths = array($style->length_in_pt($bp["top"]["width"]),
-            $style->length_in_pt($bp["right"]["width"]),
-            $style->length_in_pt($bp["bottom"]["width"]),
-            $style->length_in_pt($bp["left"]["width"]));
+        $widths = array(
+            (float)$style->length_in_pt($bp["top"]["width"]),
+            (float)$style->length_in_pt($bp["right"]["width"]),
+            (float)$style->length_in_pt($bp["bottom"]["width"]),
+            (float)$style->length_in_pt($bp["left"]["width"])
+        );
 
         foreach ($bp as $side => $props) {
             list($x, $y, $w, $h) = $border_box;
@@ -133,32 +143,33 @@ class Block extends AbstractRenderer
                 $props["style"] === "none" ||
                 $props["width"] <= 0 ||
                 $props["color"] == "transparent"
-            )
+            ) {
                 continue;
+            }
 
             switch ($side) {
                 case "top":
-                    $length = $w;
+                    $length = (float)$w;
                     $r1 = $radius["top-left"];
                     $r2 = $radius["top-right"];
                     break;
 
                 case "bottom":
-                    $length = $w;
-                    $y += $h;
+                    $length = (float)$w;
+                    $y += (float)$h;
                     $r1 = $radius["bottom-left"];
                     $r2 = $radius["bottom-right"];
                     break;
 
                 case "left":
-                    $length = $h;
+                    $length = (float)$h;
                     $r1 = $radius["top-left"];
                     $r2 = $radius["bottom-left"];
                     break;
 
                 case "right":
-                    $length = $h;
-                    $x += $w;
+                    $length = (float)$h;
+                    $x += (float)$w;
                     $r1 = $radius["top-right"];
                     $r2 = $radius["bottom-right"];
                     break;
@@ -172,6 +183,11 @@ class Block extends AbstractRenderer
         }
     }
 
+    /**
+     * @param AbstractFrameDecorator $frame
+     * @param null $border_box
+     * @param string $corner_style
+     */
     protected function _render_outline(AbstractFrameDecorator $frame, $border_box = null, $corner_style = "bevel")
     {
         $style = $frame->get_style();
@@ -182,8 +198,9 @@ class Block extends AbstractRenderer
             "color" => $style->outline_color,
         );
 
-        if (!$props["style"] || $props["style"] === "none" || $props["width"] <= 0)
+        if (!$props["style"] || $props["style"] === "none" || $props["width"] <= 0) {
             return;
+        }
 
         if (empty($border_box)) {
             $border_box = $frame->get_border_box();
@@ -200,7 +217,7 @@ class Block extends AbstractRenderer
             $border_box[3] += $offset;
 
             list($x, $y, $w, $h) = $border_box;
-            $this->_canvas->rectangle($x, $y, $w, $h, $props["color"], $offset, $pattern);
+            $this->_canvas->rectangle($x, $y, (float)$w, (float)$h, $props["color"], $offset, $pattern);
             return;
         }
 
@@ -210,7 +227,7 @@ class Block extends AbstractRenderer
         $border_box[3] += $offset * 2;
 
         $method = "_border_" . $props["style"];
-        $widths = array_fill(0, 4, $props["width"]);
+        $widths = array_fill(0, 4, (float)$style->length_in_pt($props["width"]));
         $sides = array("top", "right", "left", "bottom");
         $length = 0;
 
@@ -219,21 +236,21 @@ class Block extends AbstractRenderer
 
             switch ($side) {
                 case "top":
-                    $length = $w;
+                    $length = (float)$w;
                     break;
 
                 case "bottom":
-                    $length = $w;
-                    $y += $h;
+                    $length = (float)$w;
+                    $y += (float)$h;
                     break;
 
                 case "left":
-                    $length = $h;
+                    $length = (float)$h;
                     break;
 
                 case "right":
-                    $length = $h;
-                    $x += $w;
+                    $length = (float)$h;
+                    $x += (float)$w;
                     break;
                 default:
                     break;
