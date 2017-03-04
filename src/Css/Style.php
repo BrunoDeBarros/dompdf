@@ -1457,6 +1457,8 @@ class Style
             return $this->_computed_border_radius;
         }
 
+        $w = (float)$w;
+        $h = (float)$h;
         $rTL = (float)$this->__get("border_top_left_radius");
         $rTR = (float)$this->__get("border_top_right_radius");
         $rBL = (float)$this->__get("border_bottom_left_radius");
@@ -1736,7 +1738,7 @@ class Style
         if (mb_strpos($val, "url") === false) {
             $path = "none"; //Don't resolve no image -> otherwise would prefix path and no longer recognize as none
         } else {
-            $val = preg_replace("/url\(['\"]?([^'\")]+)['\"]?\)/", "\\1", trim($val));
+            $val = preg_replace("/url\(\s*['\"]?([^'\")]+)['\"]?\s*\)/", "\\1", trim($val));
 
             // Resolve the url now in the context of the current stylesheet
             $parsed_url = Helpers::explode_url($val);
@@ -1994,10 +1996,10 @@ class Style
             $this->_set_style("font_weight", self::$_defaults["font_weight"], $important);
         }
 
-        if (preg_match("/^(xx-small|x-small|small|medium|large|x-large|xx-large|smaller|larger|\d+\s*(?:pt|px|pc|em|ex|in|cm|mm|%))\s*(.*)$/i", $val, $match)) {
+        if (preg_match("/^(xx-small|x-small|small|medium|large|x-large|xx-large|smaller|larger|\d+\s*(?:pt|px|pc|em|ex|in|cm|mm|%))(?:\/|\s*)(.*)$/i", $val, $match)) {
             $this->_set_style("font_size", $match[1], $important);
             $val = $match[2];
-            if (preg_match("/^\/\s*(\d+\s*(?:pt|px|pc|em|ex|in|cm|mm|%))\s*(.*)$/i", $val, $match)) {
+            if (preg_match("/^(?:\/|\s*)(\d+\s*(?:pt|px|pc|em|ex|in|cm|mm|%)?)\s*(.*)$/i", $val, $match)) {
                 $this->_set_style("line_height", $match[1], $important);
                 $val = $match[2];
             } else {

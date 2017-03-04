@@ -3825,9 +3825,11 @@ EOT;
         $encodedfallbackfilename = rawurlencode($fallbackfilename);
         $encodedfilename = rawurlencode($filename);
 
-        header(
-            "Content-Disposition: $attachment; filename=" . $encodedfallbackfilename . "; filename*=UTF-8''$encodedfilename"
-        );
+        $contentDisposition = "Content-Disposition: $attachment; filename=\"" . $encodedfallbackfilename . "\"";
+        if ($encodedfallbackfilename !== $encodedfilename) {
+            $contentDisposition .= "; filename*=UTF-8''$encodedfilename";
+        }
+        header($contentDisposition);
 
         if (isset($options['Accept-Ranges']) && $options['Accept-Ranges'] == 1) {
             //FIXME: Is this the correct value ... spec says 1#range-unit
@@ -4788,7 +4790,7 @@ EOT;
             // the first version containing it was 3.0.1RC1
             static $imagickClonable = null;
             if ($imagickClonable === null) {
-                $imagickClonable = version_compare(phpversion('imagick'), '3.0.1rc1') > 0;
+                $imagickClonable = version_compare(Imagick::IMAGICK_EXTVER, '3.0.1rc1') > 0;
             }
 
             $imagick = new \Imagick($file);
