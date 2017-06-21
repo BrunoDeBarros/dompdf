@@ -749,6 +749,12 @@ class Stylesheet
                             $query .= "[not(@disabled)]";
                             $tok = "";
                             break;
+
+                        // the selector is not handled, until we support all possible selectors force an empty set (silent failure)
+                        default:
+                            $query = "/..";
+                            $tok = "";
+                            break;
                     }
 
                     break;
@@ -1032,15 +1038,6 @@ class Stylesheet
             // Helpers::pre_r($frame->get_node()->nodeName . ":");
             if (!$root_flg && $this->_page_styles["base"]) {
                 $style = $this->_page_styles["base"];
-                $root_flg = true;
-
-                // set the page width, height, and orientation based on the base page style
-                if ($style->size !== "auto") {
-                    list($paper_width, $paper_height) = $style->size;
-                }
-                $paper_width = $paper_width - (float)$style->length_in_pt($style->margin_left) - (float)$style->length_in_pt($style->margin_right);
-                $paper_height = $paper_height - (float)$style->length_in_pt($style->margin_top) - (float)$style->length_in_pt($style->margin_bottom);
-                $paper_orientation = ($paper_width > $paper_height ? "landscape" : "portrait");
             } else {
                 $style = $this->create_style();
             }
@@ -1198,6 +1195,17 @@ class Stylesheet
             echo "</pre>";*/
             $frame->set_style($style);
 
+            if (!$root_flg && $this->_page_styles["base"]) {
+                $root_flg = true;
+
+                // set the page width, height, and orientation based on the parsed page style
+                if ($style->size !== "auto") {
+                    list($paper_width, $paper_height) = $style->size;
+                }
+                $paper_width = $paper_width - (float)$style->length_in_pt($style->margin_left) - (float)$style->length_in_pt($style->margin_right);
+                $paper_height = $paper_height - (float)$style->length_in_pt($style->margin_top) - (float)$style->length_in_pt($style->margin_bottom);
+                $paper_orientation = ($paper_width > $paper_height ? "landscape" : "portrait");
+            }
         }
 
         // We're done!  Clean out the registry of all styles since we
