@@ -1236,6 +1236,11 @@ EOT;
                         $res .= "\n/Filter /FlateDecode";
                     }
 
+                    if ($this->encrypted) {
+                        $this->encryptInit($id);
+                        $tmp = $this->ARC4($tmp);
+                    }
+
                     $res .= "\n/Length " . mb_strlen($tmp, '8bit') . ">>\nstream\n$tmp\nendstream";
                 }
 
@@ -1303,10 +1308,6 @@ EOT;
      */
     protected function o_info($id, $action, $options = '')
     {
-        if ($action !== 'new') {
-            $o = &$this->objects[$id];
-        }
-
         switch ($action) {
             case 'new':
                 $this->infoObject = $id;
@@ -1328,23 +1329,27 @@ EOT;
             case 'CreationDate':
             case 'ModDate':
             case 'Trapped':
-                $o['info'][$action] = $options;
+                $this->objects[$id]['info'][$action] = $options;
                 break;
 
             case 'out':
-                if ($this->encrypted) {
+                $encrypted = $this->encrypted;
+                if ($encrypted) {
                     $this->encryptInit($id);
                 }
 
                 $res = "\n$id 0 obj\n<<\n";
+                $o = &$this->objects[$id];
                 foreach ($o['info'] as $k => $v) {
                     $res .= "/$k (";
 
-                    if ($this->encrypted) {
-                        $v = $this->ARC4($v);
-                    } // dates must be outputted as-is, without Unicode transformations
-                    elseif (!in_array($k, array('CreationDate', 'ModDate'))) {
+                    // dates must be outputted as-is, without Unicode transformations
+                    if ($k !== 'CreationDate' && $k !== 'ModDate') {
                         $v = $this->filterText($v);
+                    }
+
+                    if ($encrypted) {
+                        $v = $this->ARC4($v);
                     }
 
                     $res .= $v;
