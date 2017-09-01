@@ -544,7 +544,7 @@ class Style
             }
 
             if ($l === "normal") {
-                $ret += $ref_size;
+                $ret += (float)$ref_size;
                 continue;
             }
 
@@ -576,7 +576,7 @@ class Style
             }
 
             if (($i = mb_strpos($l, "%")) !== false) {
-                $ret += (float)mb_substr($l, 0, $i) / 100 * $ref_size;
+                $ret += (float)mb_substr($l, 0, $i) / 100 * (float)$ref_size;
                 continue;
             }
 
@@ -689,19 +689,33 @@ class Style
      */
     function merge(Style $style)
     {
+        $shorthand_properties = array("background", "border", "border_bottom", "border_color", "border_left", "border_radius", "border_right", "border_style", "border_top", "border_width", "flex", "font", "list_style", "margin", "padding", "transform");
         //treat the !important attribute
         //if old rule has !important attribute, override with new rule only if
         //the new rule is also !important
         foreach ($style->_props as $prop => $val) {
+            $can_merge = false;
             if (isset($style->_important_props[$prop])) {
                 $this->_important_props[$prop] = true;
-                //see __set and __get, on all assignments clear cache!
-                $this->_prop_cache[$prop] = null;
-                $this->_props[$prop] = $val;
+                $can_merge = true;
             } else if (!isset($this->_important_props[$prop])) {
+                $can_merge = true;
+            }
+
+            if ($can_merge) {
                 //see __set and __get, on all assignments clear cache!
                 $this->_prop_cache[$prop] = null;
                 $this->_props[$prop] = $val;
+
+                // Clear out "inherit" shorthand properties if specific properties have been set
+                $shorthands = array_filter($shorthand_properties, function($el) use ($prop) {
+                    return ( strpos($prop, $el."_") !== false );
+                });
+                foreach ($shorthands as $shorthand) {
+                    if (array_key_exists($shorthand, $this->_props) && $this->_props[$shorthand] === "inherit") {
+                        unset($this->_props[$shorthand]);
+                    }
+                } 
             }
         }
 

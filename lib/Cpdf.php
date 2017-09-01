@@ -310,7 +310,7 @@ class Cpdf
     /**
      * @var string The target internal encoding
      */
-    static protected $targetEncoding = 'iso-8859-1';
+    static protected $targetEncoding = 'Windows-1252';
 
     /**
      * @var array The list of the core fonts
@@ -356,7 +356,6 @@ class Cpdf
 
         // also initialize the font families that are known about already
         $this->setFontFamily('init');
-        //  $this->fileIdentifier = md5('xxxxxxxx'.time());
     }
 
     /**
@@ -1345,7 +1344,7 @@ EOT;
 
                     // dates must be outputted as-is, without Unicode transformations
                     if ($k !== 'CreationDate' && $k !== 'ModDate') {
-                        $v = $this->filterText($v);
+                        $v = $this->filterText($v, true, false);
                     }
 
                     if ($encrypted) {
@@ -1715,7 +1714,7 @@ EOT;
                     't'    => 'javascript',
                     'info' => array(
                         'S'  => '/JavaScript',
-                        'JS' => '(' . $this->filterText($code) . ')',
+                        'JS' => '(' . $this->filterText($code, true, false) . ')',
                     )
                 );
                 break;
@@ -1997,7 +1996,7 @@ EOT;
 
                 // now make the u value, phew.
                 $tmp = $this->md5_16(
-                    $user . $ovalue . chr($options['p']) . chr(255) . chr(255) . chr(255) . $this->fileIdentifier
+                    $user . $ovalue . chr($options['p']) . chr(255) . chr(255) . chr(255)
                 );
 
                 $ukey = substr($tmp, 0, 5);
@@ -2017,8 +2016,8 @@ EOT;
                 $res .= "\n/Filter /Standard";
                 $res .= "\n/V 1";
                 $res .= "\n/R 2";
-                $res .= "\n/O (" . $this->filterText($o['info']['O'], true, false) . ')';
-                $res .= "\n/U (" . $this->filterText($o['info']['U'], true, false) . ')';
+                $res .= "\n/O (" . $this->filterText($o['info']['O'], false, false) . ')';
+                $res .= "\n/U (" . $this->filterText($o['info']['U'], false, false) . ')';
                 // and the p-value needs to be converted to account for the twos-complement approach
                 $o['info']['p'] = (($o['info']['p'] ^ 255) + 1) * -1;
                 $res .= "\n/P " . ($o['info']['p']);
@@ -2263,16 +2262,23 @@ EOT;
             $content .= str_pad($p, 10, "0", STR_PAD_LEFT) . " 00000 n \n";
         }
 
-        $content .= "trailer\n<<\n/Size " . (count($xref) + 1) . "\n/Root 1 0 R\n/Info $this->infoObject 0 R\n";
+        $content .= "trailer\n<<\n" .
+            '/Size ' . (count($xref) + 1) . "\n" .
+            '/Root 1 0 R' . "\n" .
+            '/Info ' . $this->infoObject . " 0 R\n"
+        ;
 
         // if encryption has been applied to this document then add the marker for this dictionary
         if ($this->arc4_objnum > 0) {
-            $content .= "/Encrypt $this->arc4_objnum 0 R\n";
+            $content .= '/Encrypt ' . $this->arc4_objnum . " 0 R\n";
         }
 
-        if (mb_strlen($this->fileIdentifier, '8bit')) {
-            $content .= "/ID[<$this->fileIdentifier><$this->fileIdentifier>]\n";
+        if ($this->fileIdentifier === '') {
+            $tmp = implode('',  $this->objects[$this->infoObject]['info']);
+            $this->fileIdentifier = md5('DOMPDF' . __FILE__ . $tmp . $pos . microtime() . mt_rand());
         }
+
+        $content .= '/ID[<' . $this->fileIdentifier . '><' . $this->fileIdentifier . ">]\n";
 
         // account for \n added at start of xref table
         $pos++;
@@ -3262,10 +3268,17 @@ EOT;
     {
         $this->addContent(sprintf("\n%.3F %.3F %.3F %.3F %.3F %.3F c", $x1, $y1, $x2, $y2, $x3, $y3));
     }
-
+ 
+    /**
+     * draw a bezier curve based on 4 control points
+     */    function quadTo($cpx, $cpy, $x, $y)
+    {
+        $this->addContent(sprintf("\n%.3F %.3F %.3F %.3F v", $cpx, $cpy, $x, $y));
+    }
+    
     function closePath()
     {
-        //$this->addContent(' s');
+        $this->addContent(' h');
     }
 
     function endPath()
@@ -3950,6 +3963,8 @@ EOT;
                 //$text = html_entity_decode($text, ENT_QUOTES);
                 $text = mb_convert_encoding($text, self::$targetEncoding, 'UTF-8');
             }
+        } else if ($bom) {
+            $text = $this->utf8toUtf16BE($text, $bom);
         }
 
         // the chr(13) substitution fixes a bug seen in TCPDF (bug #1421290)
@@ -4049,10 +4064,6 @@ EOT;
      */
     function utf8toUtf16BE(&$text, $bom = true)
     {
-        $cf = $this->currentFont;
-        if (!$this->fonts[$cf]['isUnicode']) {
-            return $text;
-        }
         $out = $bom ? "\xFE\xFF" : '';
 
         $unicode = $this->utf8toCodePointsArray($text);
