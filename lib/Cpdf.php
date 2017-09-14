@@ -18,7 +18,6 @@
 use FontLib\Font;
 use FontLib\BinaryStream;
 
-
 class Cpdf
 {
 
@@ -856,36 +855,8 @@ class Cpdf
                     // transform FPDF to TCPDF (http://tcpdf.sourceforge.net/)
 
                     $toUnicodeId = ++$this->numObj;
-                    $this->o_contents($toUnicodeId, 'new', 'raw');
+                    $this->o_toUnicode($toUnicodeId, 'new');
                     $this->objects[$id]['info']['toUnicode'] = $toUnicodeId;
-
-                    $stream = <<<EOT
-/CIDInit /ProcSet findresource begin
-12 dict begin
-begincmap
-/CIDSystemInfo
-<</Registry (Adobe)
-/Ordering (UCS)
-/Supplement 0
->> def
-/CMapName /Adobe-Identity-UCS def
-/CMapType 2 def
-1 begincodespacerange
-<0000> <FFFF>
-endcodespacerange
-1 beginbfrange
-<0000> <FFFF> <0000>
-endbfrange
-endcmap
-CMapName currentdict /CMap defineresource pop
-end
-end
-EOT;
-
-                    $res = "<</Length " . mb_strlen($stream, '8bit') . " >>\n";
-                    $res .= "stream\n" . $stream . "\nendstream";
-
-                    $this->objects[$toUnicodeId]['c'] = $res;
 
                     $cidFontId = ++$this->numObj;
                     $this->o_fontDescendentCID($cidFontId, 'new', $options);
@@ -973,6 +944,66 @@ EOT;
                     $res .= ">>\n";
                     $res .= "endobj";
                 }
+
+                return $res;
+        }
+
+        return null;
+    }
+
+    /**
+     * A toUnicode section, needed for unicode fonts
+     *
+     * @param $id
+     * @param $action
+     * @return null|string
+     */
+    protected function o_toUnicode($id, $action)
+    {
+        switch ($action) {
+            case 'new':
+                $this->objects[$id] = array(
+                    't'    => 'toUnicode'
+                );
+                break;
+            case 'add':
+                break;
+            case 'out':
+                $ordering = '(UCS)';
+                $registry = '(Adobe)';
+
+                if ($this->encrypted) {
+                    $this->encryptInit($id);
+                    $ordering = $this->ARC4($ordering);
+                    $registry = $this->ARC4($registry);
+                }
+
+                $stream = <<<EOT
+/CIDInit /ProcSet findresource begin
+12 dict begin
+begincmap
+/CIDSystemInfo
+<</Registry $registry
+/Ordering $ordering
+/Supplement 0
+>> def
+/CMapName /Adobe-Identity-UCS def
+/CMapType 2 def
+1 begincodespacerange
+<0000> <FFFF>
+endcodespacerange
+1 beginbfrange
+<0000> <FFFF> <0000>
+endbfrange
+endcmap
+CMapName currentdict /CMap defineresource pop
+end
+end
+EOT;
+
+                $res = "\n$id 0 obj\n";
+                $res .= "<</Length " . mb_strlen($stream, '8bit') . " >>\n";
+                $res .= "stream\n" . $stream . "\nendstream" . "\nendobj";;
 
                 return $res;
         }
@@ -1118,13 +1149,8 @@ EOT;
 
                 // we need a CID system info section
                 $cidSystemInfoId = ++$this->numObj;
-                $this->o_contents($cidSystemInfoId, 'new', 'raw');
+                $this->o_cidSystemInfo($cidSystemInfoId, 'new');
                 $this->objects[$id]['info']['cidSystemInfo'] = $cidSystemInfoId;
-                $res = "<</Registry (Adobe)\n"; // A string identifying an issuer of character collections
-                $res .= "/Ordering (UCS)\n"; // A string that uniquely names a character collection issued by a specific registry
-                $res .= "/Supplement 0\n"; // The supplement number of the character collection.
-                $res .= ">>";
-                $this->objects[$cidSystemInfoId]['c'] = $res;
 
                 // and a CID to GID map
                 $cidToGidMapId = ++$this->numObj;
@@ -1187,6 +1213,49 @@ EOT;
                 $res .= "/CIDToGIDMap " . $o['info']['cidToGidMap'] . " 0 R\n";
                 $res .= ">>\n";
                 $res .= "endobj";
+
+                return $res;
+        }
+
+        return null;
+    }
+
+    /**
+     * CID system info section, needed for unicode fonts
+     *
+     * @param $id
+     * @param $action
+     * @return null|string
+     */
+    protected function o_cidSystemInfo($id, $action)
+    {
+        switch ($action) {
+            case 'new':
+                $this->objects[$id] = array(
+                    't' => 'cidSystemInfo'
+                );
+                break;
+            case 'add':
+                break;
+            case 'out':
+                $ordering = '(UCS)';
+                $registry = '(Adobe)';
+
+                if ($this->encrypted) {
+                    $this->encryptInit($id);
+                    $ordering = $this->ARC4($ordering);
+                    $registry = $this->ARC4($registry);
+                }
+
+
+                $res = "\n$id 0 obj\n";
+
+                $res .= '<</Registry ' . $registry . "\n"; // A string identifying an issuer of character collections
+                $res .= '/Ordering ' . $ordering . "\n"; // A string that uniquely names a character collection issued by a specific registry
+                $res .= "/Supplement 0\n"; // The supplement number of the character collection.
+                $res .= ">>";
+
+                $res .= "\nendobj";;
 
                 return $res;
         }
@@ -3800,63 +3869,40 @@ EOT;
     }
 
     /**
-     * output the pdf code, streaming it to the browser
-     * the relevant headers are set so that hopefully the browser will recognise it
+     * Streams the PDF to the client.
      *
-     * @param string $options
+     * @param string $filename The filename to present to the client.
+     * @param array $options Associative array: 'compress' => 1 or 0 (default 1); 'Attachment' => 1 or 0 (default 1).
      */
-    function stream($options = '')
+    function stream($filename = "document.pdf", $options = array())
     {
-        // setting the options allows the adjustment of the headers
-        // values at the moment are:
-        // 'Content-Disposition' => 'filename'  - sets the filename, though not too sure how well this will
-        //        work as in my trial the browser seems to use the filename of the php file with .pdf on the end
-        // 'Accept-Ranges' => 1 or 0 - if this is not set to 1, then this header is not included, off by default
-        //    this header seems to have caused some problems despite tha fact that it is supposed to solve
-        //    them, so I am leaving it off by default.
-        // 'compress' = > 1 or 0 - apply content stream compression, this is on (1) by default
-        // 'Attachment' => 1 or 0 - if 1, force the browser to open a download dialog
-        if (!is_array($options)) {
-            $options = array();
-        }
-
         if (headers_sent()) {
             die("Unable to stream pdf: headers already sent");
         }
 
-        $debug = empty($options['compression']);
+        if (!isset($options["compress"])) $options["compress"] = true;
+        if (!isset($options["Attachment"])) $options["Attachment"] = true;
+
+        $debug = !$options['compress'];
         $tmp = ltrim($this->output($debug));
 
         header("Cache-Control: private");
-        header("Content-type: application/pdf");
+        header("Content-Type: application/pdf");
+        header("Content-Length: " . mb_strlen($tmp, "8bit"));
 
-        //FIXME: I don't know that this is sufficient for determining content length (i.e. what about transport compression?)
-        header("Content-Length: " . mb_strlen($tmp, '8bit'));
-        $filename = (isset($options['Content-Disposition']) ? $options['Content-Disposition'] : 'document.pdf');
         $filename = str_replace(array("\n", "'"), "", basename($filename, ".pdf")) . ".pdf";
-
-        if (!isset($options["Attachment"])) {
-            $options["Attachment"] = true;
-        }
-
         $attachment = $options["Attachment"] ? "attachment" : "inline";
 
-        // detect the character encoding of the incoming file
         $encoding = mb_detect_encoding($filename);
         $fallbackfilename = mb_convert_encoding($filename, "ISO-8859-1", $encoding);
-        $encodedfallbackfilename = rawurlencode($fallbackfilename);
+        $fallbackfilename = str_replace("\"", "", $fallbackfilename);
         $encodedfilename = rawurlencode($filename);
 
-        $contentDisposition = "Content-Disposition: $attachment; filename=\"" . $encodedfallbackfilename . "\"";
-        if ($encodedfallbackfilename !== $encodedfilename) {
+        $contentDisposition = "Content-Disposition: $attachment; filename=\"$fallbackfilename\"";
+        if ($fallbackfilename !== $filename) {
             $contentDisposition .= "; filename*=UTF-8''$encodedfilename";
         }
         header($contentDisposition);
-
-        if (isset($options['Accept-Ranges']) && $options['Accept-Ranges'] == 1) {
-            //FIXME: Is this the correct value ... spec says 1#range-unit
-            header("Accept-Ranges: " . mb_strlen($tmp, '8bit'));
-        }
 
         echo $tmp;
         flush();
