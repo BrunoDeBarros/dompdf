@@ -464,28 +464,28 @@ class Cpdf
                         // Named with limited valid values
                         case 'NonFullScreenPageMode':
                             if (!in_array($v, array('UseNone', 'UseOutlines', 'UseThumbs', 'UseOC'))) {
-                                continue;
+                                break;
                             }
                             $o['info'][$k] = $v;
                             break;
 
                         case 'Direction':
                             if (!in_array($v, array('L2R', 'R2L'))) {
-                                continue;
+                                break;
                             }
                             $o['info'][$k] = $v;
                             break;
 
                         case 'PrintScaling':
                             if (!in_array($v, array('None', 'AppDefault'))) {
-                                continue;
+                                break;
                             }
                             $o['info'][$k] = $v;
                             break;
 
                         case 'Duplex':
                             if (!in_array($v, array('None', 'AppDefault'))) {
-                                continue;
+                                break;
                             }
                             $o['info'][$k] = $v;
                             break;
@@ -4801,12 +4801,12 @@ EOT;
         imagesavealpha($img, false);
 
         // create temp alpha file
-        $tempfile_alpha = tempnam($this->tmp, "cpdf_img_");
+        $tempfile_alpha = @tempnam($this->tmp, "cpdf_img_");
         @unlink($tempfile_alpha);
         $tempfile_alpha = "$tempfile_alpha.png";
 
         // create temp plain file
-        $tempfile_plain = tempnam($this->tmp, "cpdf_img_");
+        $tempfile_plain = @tempnam($this->tmp, "cpdf_img_");
         @unlink($tempfile_plain);
         $tempfile_plain = "$tempfile_plain.png";
 
@@ -4863,16 +4863,20 @@ EOT;
             $imagick->setFormat('png');
 
             // Get opacity channel (negative of alpha channel)
-            $alpha_channel = $imagickClonable ? clone $imagick : $imagick->clone();
-            $alpha_channel->separateImageChannel(\Imagick::CHANNEL_ALPHA);
-            $alpha_channel->negateImage(true);
-            $alpha_channel->writeImage($tempfile_alpha);
+            if ($imagick->getImageAlphaChannel() !== 0) {
+                $alpha_channel = $imagickClonable ? clone $imagick : $imagick->clone();
+                $alpha_channel->separateImageChannel(\Imagick::CHANNEL_ALPHA);
+                $alpha_channel->negateImage(true);
+                $alpha_channel->writeImage($tempfile_alpha);
 
-            // Cast to 8bit+palette
-            $imgalpha_ = imagecreatefrompng($tempfile_alpha);
-            imagecopy($imgalpha, $imgalpha_, 0, 0, 0, 0, $wpx, $hpx);
-            imagedestroy($imgalpha_);
-            imagepng($imgalpha, $tempfile_alpha);
+                // Cast to 8bit+palette
+                $imgalpha_ = imagecreatefrompng($tempfile_alpha);
+                imagecopy($imgalpha, $imgalpha_, 0, 0, 0, 0, $wpx, $hpx);
+                imagedestroy($imgalpha_);
+                imagepng($imgalpha, $tempfile_alpha);
+            } else {
+                $tempfile_alpha = null;
+            }
 
             // Make opaque image
             $color_channels = new \Imagick();
@@ -4928,15 +4932,19 @@ EOT;
         }
 
         // embed mask image
-        $this->addImagePng($tempfile_alpha, $x, $y, $w, $h, $imgalpha, true);
-        imagedestroy($imgalpha);
+        if ($tempfile_alpha) {
+            $this->addImagePng($tempfile_alpha, $x, $y, $w, $h, $imgalpha, true);
+            imagedestroy($imgalpha);
+        }
 
         // embed image, masked with previously embedded mask
-        $this->addImagePng($tempfile_plain, $x, $y, $w, $h, $imgplain, false, true);
+        $this->addImagePng($tempfile_plain, $x, $y, $w, $h, $imgplain, false, ($tempfile_alpha !== null));
         imagedestroy($imgplain);
 
         // remove temp files
-        unlink($tempfile_alpha);
+        if ($tempfile_alpha) {
+            unlink($tempfile_alpha);
+        }
         unlink($tempfile_plain);
     }
 
