@@ -3,12 +3,12 @@ namespace Dompdf\Tests;
 
 use Dompdf\Frame\FrameTree;
 use Dompdf\Options;
-use PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 use Dompdf\Dompdf;
 use Dompdf\Css\Stylesheet;
 use DOMDocument;
 
-class DompdfTest extends PHPUnit_Framework_TestCase
+class DompdfTest extends TestCase
 {
     public function testConstructor()
     {
@@ -53,7 +53,7 @@ class DompdfTest extends PHPUnit_Framework_TestCase
     public function testLoadHtml()
     {
         $dompdf = new Dompdf();
-        $dompdf->loadHtml('<strong>Hello</strong>');
+        $dompdf->loadHtml('<html><body><strong>Hello</strong></body></html>');
         $dom = $dompdf->getDom();
         $this->assertEquals('Hello', $dom->textContent);
     }
@@ -61,10 +61,37 @@ class DompdfTest extends PHPUnit_Framework_TestCase
     public function testRender()
     {
         $dompdf = new Dompdf();
-        $dompdf->loadHtml('<strong>Hello</strong>');
+        $dompdf->loadHtml('<html><body><strong>Hello</strong></body></html>');
         $dompdf->render();
 
         $dom = $dompdf->getDom();
         $this->assertEquals('', $dom->textContent);
+    }
+
+    public function testSpaceAtStartOfSecondInlineTag()
+    {
+        $text_frame_contents = array();
+
+        $dompdf = new Dompdf();
+
+        // Use a callback to inspect the frame tree; otherwise FrameReflower\Page::reflow()
+        // will dispose of it before dompdf->render finishes
+        $dompdf->setCallbacks(array('test' => array(
+            'event' => 'end_page_render',
+            'f' => function($params) use (&$text_frame_contents) {
+                $frame = $params["frame"];
+                foreach ($frame->get_children() as $child) {
+                    foreach ($child->get_children() as $grandchild) {
+                        $text_frame_contents[] = $grandchild->get_text();
+                    }
+                }
+            }
+        )));
+
+        $dompdf->loadHtml('<html><body><span>one</span><span> - two</span></body></html>');
+        $dompdf->render();
+
+        $this->assertEquals("one", $text_frame_contents[0]);
+        $this->assertEquals(" - two", $text_frame_contents[1]);
     }
 }
