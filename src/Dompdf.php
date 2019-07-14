@@ -479,7 +479,7 @@ class Dompdf
             $doc = $tokenizer->save();
 
             // Remove #text children nodes in nodes that shouldn't have
-            $tag_names = array("html", "table", "tbody", "thead", "tfoot", "tr");
+            $tag_names = array("html", "head", "table", "tbody", "thead", "tfoot", "tr");
             foreach ($tag_names as $tag_name) {
                 $nodes = $doc->getElementsByTagName($tag_name);
 
@@ -499,7 +499,7 @@ class Dompdf
             $doc->encoding = $encoding;
 
             // Remove #text children nodes in nodes that shouldn't have
-            $tag_names = array("html", "table", "tbody", "thead", "tfoot", "tr");
+            $tag_names = array("html", "head", "table", "tbody", "thead", "tfoot", "tr");
             foreach ($tag_names as $tag_name) {
                 $nodes = $doc->getElementsByTagName($tag_name);
 
@@ -843,7 +843,7 @@ class Dompdf
             }
         }
 
-        $root->set_containing_block(0, 0,$canvas->get_width(), $canvas->get_height());
+        $root->set_containing_block(0, 0, $canvas->get_width(), $canvas->get_height());
         $root->set_renderer(new Renderer($this));
 
         // This is where the magic happens:
