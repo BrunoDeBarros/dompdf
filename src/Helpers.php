@@ -824,11 +824,7 @@ class Helpers
     {
         $content = null;
         $headers = null;
-        $result = Helpers::explode_url($uri);
-        $proto = $result["protocol"];
-        $host = $result["host"];
-        $path = $result["path"];
-        $file = $result["file"];
+        list($proto, $host, $path, $file) = Helpers::explode_url($uri);
         $is_local_path = ($proto == '' || $proto === 'file://');
 
         set_error_handler([self::class, 'record_warnings']);
