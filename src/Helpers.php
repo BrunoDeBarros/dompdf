@@ -824,13 +824,19 @@ class Helpers
     {
         $content = null;
         $headers = null;
-        [$proto, $host, $path, $file] = Helpers::explode_url($uri);
+        $result = Helpers::explode_url($uri);
+        $proto = $result["protocol"];
+        $host = $result["host"];
+        $path = $result["path"];
+        $file = $result["file"];
         $is_local_path = ($proto == '' || $proto === 'file://');
 
         set_error_handler([self::class, 'record_warnings']);
 
         try {
-            if ($is_local_path || ini_get('allow_url_fopen')) {
+            if (function_exists("get_url_contents")) {
+                $content = get_url_contents($uri);
+            } elseif ($is_local_path || ini_get('allow_url_fopen')) {
                 if ($is_local_path === false) {
                     $uri = Helpers::encodeURI($uri);
                 }
