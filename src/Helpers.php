@@ -37,7 +37,7 @@ class Helpers
         return null;
     }
 
-      /**
+    /**
      * builds a full url given a protocol, hostname, base path and url
      *
      * @param string $protocol
@@ -529,11 +529,11 @@ class Helpers
             return chr(0xC0 | $c >> 6) . chr(0x80 | $c & 0x3F);
         } else if ($c <= 0xFFFF) {
             return chr(0xE0 | $c >> 12) . chr(0x80 | $c >> 6 & 0x3F)
-            . chr(0x80 | $c & 0x3F);
+                . chr(0x80 | $c & 0x3F);
         } else if ($c <= 0x10FFFF) {
             return chr(0xF0 | $c >> 18) . chr(0x80 | $c >> 12 & 0x3F)
-            . chr(0x80 | $c >> 6 & 0x3F)
-            . chr(0x80 | $c & 0x3F);
+                . chr(0x80 | $c >> 6 & 0x3F)
+                . chr(0x80 | $c & 0x3F);
         }
         return false;
     }
@@ -824,7 +824,11 @@ class Helpers
     {
         $content = null;
         $headers = null;
-        [$proto, $host, $path, $file] = Helpers::explode_url($uri);
+        $result = Helpers::explode_url($uri);
+        $proto = $result["protocol"];
+        $host = $result["host"];
+        $path = $result["path"];
+        $file = $result["file"];
         $is_local_path = ($proto == '' || $proto === 'file://');
 
         set_error_handler([self::class, 'record_warnings']);
