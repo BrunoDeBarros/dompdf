@@ -385,7 +385,7 @@ class Dompdf
             $file = $realfile;
         }
 
-        list($contents, $http_response_header) = Helpers::getFileContent($file, $this->httpContext);
+        [$contents, $http_response_header] = Helpers::getFileContent($file, $this->httpContext);
         if (empty($contents)) {
             throw new Exception("File '$file' not found.");
         }

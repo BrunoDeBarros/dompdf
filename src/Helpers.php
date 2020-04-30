@@ -607,7 +607,7 @@ class Helpers
         $type = isset($types[$type]) ? $types[$type] : null;
 
         if ($width == null || $height == null) {
-            list($data, $headers) = Helpers::getFileContent($filename, $context);
+            [$data, $headers] = Helpers::getFileContent($filename, $context);
 
             if (!empty($data)) {
                 if (substr($data, 0, 2) === "BM") {
