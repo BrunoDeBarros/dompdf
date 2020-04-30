@@ -55,7 +55,7 @@ class FontMetrics
      *
      * @var array
      */
-    protected $fontLookup = array();
+    protected $fontLookup = [];
 
     /**
      * @var Options
@@ -139,7 +139,7 @@ class FontMetrics
 
         $cacheData = require $this->getCacheFile();
 
-        $this->fontLookup = array();
+        $this->fontLookup = [];
         if (is_array($this->fontLookup)) {
             foreach ($cacheData as $key => $value) {
                 $this->fontLookup[stripslashes($key)] = $value;
@@ -173,19 +173,29 @@ class FontMetrics
         $fontname = mb_strtolower($style["family"]);
         $families = $this->getFontFamilies();
 
-        $entry = array();
+        $entry = [];
         if (isset($families[$fontname])) {
             $entry = $families[$fontname];
         }
 
         $styleString = $this->getType("{$style['weight']} {$style['style']}");
-        if (isset($entry[$styleString])) {
-            return true;
-        }
 
         $fontDir = $this->getOptions()->getFontDir();
         $remoteHash = md5($remoteFile);
-        $localFile = $fontDir . '/' . $remoteHash;
+
+        $prefix = $fontname . "_" . $styleString;
+        $prefix = preg_replace("/[^\\pL\d]+/u", "-", $prefix);
+        $prefix = trim($prefix, "-");
+        if (function_exists('iconv')) {
+            $prefix = iconv('utf-8', 'us-ascii//TRANSLIT', $prefix);
+        }
+        $prefix = preg_replace("/[^-\w]+/", "", $prefix);
+        
+        $localFile = $fontDir . "/" . $prefix . "_" . $remoteHash;
+
+        if (isset($entry[$styleString]) && $localFile == $entry[$styleString]) {
+            return true;
+        }
 
         $cacheEntry = $localFile;
         $localFile .= ".".strtolower(pathinfo(parse_url($remoteFile, PHP_URL_PATH), PATHINFO_EXTENSION));
@@ -266,7 +276,7 @@ class FontMetrics
     public function getTextWidth($text, $font, $size, $wordSpacing = 0.0, $charSpacing = 0.0)
     {
         // @todo Make sure this cache is efficient before enabling it
-        static $cache = array();
+        static $cache = [];
 
         if ($text === "") {
             return 0;
@@ -339,7 +349,7 @@ class FontMetrics
      */
     public function getFont($familyRaw, $subtypeRaw = "normal")
     {
-        static $cache = array();
+        static $cache = [];
 
         if (isset($cache[$familyRaw][$subtypeRaw])) {
             return $cache[$familyRaw][$subtypeRaw];
@@ -356,7 +366,7 @@ class FontMetrics
         $subtype = strtolower($subtypeRaw);
 
         if ($familyRaw) {
-            $family = str_replace(array("'", '"'), "", strtolower($familyRaw));
+            $family = str_replace(["'", '"'], "", strtolower($familyRaw));
 
             if (isset($this->fontLookup[$family][$subtype])) {
                 return $cache[$familyRaw][$subtypeRaw] = $this->fontLookup[$family][$subtype];
@@ -416,7 +426,7 @@ class FontMetrics
      */
     public function getFamily($family)
     {
-        $family = str_replace(array("'", '"'), "", mb_strtolower($family));
+        $family = str_replace(["'", '"'], "", mb_strtolower($family));
 
         if (isset($this->fontLookup[$family])) {
             return $this->fontLookup[$family];

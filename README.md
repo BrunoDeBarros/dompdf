@@ -25,8 +25,7 @@ release. For released code please
 question on [StackOverflow](http://stackoverflow.com/questions/tagged/dompdf) or
 on the [Google Groups](http://groups.google.com/group/dompdf).**
 
-Follow us on [![Twitter](http://twitter-badges.s3.amazonaws.com/twitter-a.png)](http://www.twitter.com/dompdf) or 
-[![Follow us on Google+](https://ssl.gstatic.com/images/icons/gplus-16.png)](https://plus.google.com/108710008521858993320?prsrc=3).
+Follow us on [![Twitter](http://twitter-badges.s3.amazonaws.com/twitter-a.png)](http://www.twitter.com/dompdf).
 
 ---
 
@@ -48,7 +47,7 @@ Follow us on [![Twitter](http://twitter-badges.s3.amazonaws.com/twitter-a.png)](
  
 ## Requirements
 
- * PHP version 5.4.0 or higher
+ * PHP version 7.1 or higher
  * DOM extension
  * MBString extension
  * php-font-lib
@@ -76,7 +75,7 @@ reference in CSS @font-face rules. See the
 [font overview](https://github.com/dompdf/dompdf/wiki/About-Fonts-and-Character-Encoding)
 for more information on how to use fonts.
 
-The [DejaVu TrueType fonts](http://dejavu-fonts.org) have been pre-installed
+The [DejaVu TrueType fonts](https://dejavu-fonts.github.io/) have been pre-installed
 to give dompdf decent Unicode character coverage by default. To use the DejaVu
 fonts reference the font in your stylesheet, e.g. `body { font-family: DejaVu
 Sans; }` (for DejaVu Sans). The following DejaVu 2.34 fonts are available:

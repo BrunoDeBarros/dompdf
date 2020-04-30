@@ -15,7 +15,7 @@ class Autoloader
      */
     public static function register()
     {
-        spl_autoload_register(array(new self, 'autoload'));
+        spl_autoload_register([new self, 'autoload']);
     }
 
     /**
@@ -25,7 +25,7 @@ class Autoloader
      */
     public static function autoload($class)
     {
-        if ($class === 'Cpdf') {
+        if ($class === 'Dompdf\Cpdf') {
             require_once __DIR__ . "/../lib/Cpdf.php";
             return;
         }
